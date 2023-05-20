@@ -1,0 +1,13 @@
+bert-score
+click
+fairseq
+google-api-python-client
+keybert
+requests
+sacrebleu
+scikit-learn
+setuptools
+torch
+tqdm
+accelerate
+transformers==4.15.0

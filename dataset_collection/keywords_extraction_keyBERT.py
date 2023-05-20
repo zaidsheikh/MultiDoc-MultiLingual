@@ -90,7 +90,7 @@ lang_2_summary_dict = {
     "RU": "summary",
     "UA": "summary",
     "VI": "summary",
-    "cantonese": "text",
+    "cantonese": "summary",
     "chinese": "text",
 }
 

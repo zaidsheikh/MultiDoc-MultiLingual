@@ -83,6 +83,22 @@ def extract_data(input_dir, output_dir, language):
                     lang + "_" + os.path.basename(target_file)
                 )
             )
+        if source_file.endswith("val.source"):
+            shutil.copy(
+                source_file,
+                os.path.join(
+                    multilingual_dir,
+                    lang + "_" + os.path.basename(source_file)
+                )
+            )
+
+            shutil.copy(
+                target_file,
+                os.path.join(
+                    multilingual_dir,
+                    lang + "_" + os.path.basename(target_file)
+                )
+            )
 
 
 @click.command()

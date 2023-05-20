@@ -31,14 +31,16 @@ def run_t5score(scorer, mt: list, ref: list):
 
 def main():
     t5_ckpt = "./model/T5Score/"
-    BASELINE = ["single_oracle", "multi_oracle", "lead_oracle", "lead_random"]
+    # BASELINE = ["single_oracle", "multi_oracle", "lead_oracle", "lead_random"]
+    BASELINE = ["TR_oracle", "TR_lead"]
     LANGUAGE = ["cantonese"]
     for baseline in BASELINE:
         print(
             "*****************************{}****************************".format(baseline))
         for language in LANGUAGE:
             print("---------------------{}-------------------".format(language))
-            ground_truth_file = "./Multi-Doc-Sum/Mtl_data_aug_filtered/split/orig/{}_test.jsonl".format(
+            # TODO: do not hardcode these
+            ground_truth_file = "./Multi-Doc-Sum/Mtl_data_aug_filtered/split/filtered/{}_test.jsonl".format(
                 language)
             if baseline == "single_mt5":
                 if language == "EN":
@@ -76,7 +78,8 @@ def main():
             print("BERTScore:")
             print(scores.mean())
 
-            t5_scorer = T5Scorer(device='cuda:0', checkpoint=t5_ckpt)
+            # t5_scorer = T5Scorer(device='cuda:0', checkpoint=t5_ckpt)
+            t5_scorer = T5Scorer(device='cpu', checkpoint=t5_ckpt)
             start = time.time()
             print(f'Begin calculating T5Score.')
             scores_precision, scores_recall = run_t5score(
