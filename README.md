@@ -109,3 +109,18 @@ $ python baselines/mt5/prepare_dataset.py \
 
 ## Evaluation
 Here is an example [evaluation.py](evaluation/run_evaluation.py) to use evaluation metrics: BERTScore and T5Score. To run T5Score, a T5Score model should be downloaded from [T5Score-summ](https://drive.google.com/drive/u/1/folders/1VrVWRbXZRBDnl4pGvcfvfLzF4P4JRO_m) to directory ./model/T5Score/.
+
+### Docker image
+
+- We have also provided a docker image with all dependencies pre-installed in order to make it easier to run the above scripts. Here's how to run the training pipeline inside a docker container:
+```
+docker pull zs12/multidoc_multilingual:v0.2
+
+# train single langauge mt5 model
+./dockerfiles/docker_train_mt5.sh prepared_dataset/individual/EN/ output/
+
+# train multilingual mt5 model
+./dockerfiles/docker_train_mt5.sh prepared_dataset/multilingual/ output/ multi
+```
+
+
