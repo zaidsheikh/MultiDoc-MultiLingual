@@ -123,4 +123,12 @@ docker pull zs12/multidoc_multilingual:v0.2
 ./dockerfiles/docker_train_mt5.sh prepared_dataset/multilingual/ output/ multi
 ```
 
+- To run the docker container via ClearML:
 
+```
+# train single langauge mt5 model
+./clearml_scripts/clearml_train_mt5.sh prepared_dataset/individual/EN/ output/
+
+# train multilingual mt5 model
+./clearml_scripts/clearml_train_mt5.sh prepared_dataset/multilingual/ output/ multi
+```
