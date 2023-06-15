@@ -9,7 +9,7 @@ import os
 import sys
 base_dir = Path(__file__).parent.parent
 sys.path.append(str(base_dir))
-from clearml_scripts.utils import download_artifacts, upload_artifacts
+from clearml_scripts.clearml_utils import download_artifacts, upload_artifacts
 
 sys.path.append(str(base_dir / "baselines" / "mt5"))
 from pipeline import main

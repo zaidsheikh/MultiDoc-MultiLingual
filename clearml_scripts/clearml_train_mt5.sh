@@ -54,17 +54,15 @@ python="/opt/conda/envs/MultiDocMultiLingual/bin/python"
 clearml_output="clearml_artifact_output/output/"
 
 set -x
-# TODO: uncomment this
-#clearml_artifact_ID=$(python ${script_dir}/upload_artifacts.py $project_name "input_dir" --files $data_dir --names "data" | tail -n1)
-#input_dir="clearml_artifact_input/${clearml_artifact_ID}/data"
-input_dir=clearml_artifact_input/abccf00bd97c434dbdd3ab685852fe90/data
+clearml_artifact_ID=$(python ${script_dir}/upload_artifacts.py $project_name "input_dir" --files $data_dir --names "data" | tail -n1)
+input_dir="clearml_artifact_input/${clearml_artifact_ID}/data"
 
 if [[ "$mode" == "single" ]]; then
   echo "train single langauge mt5 model..."
-    #--repo https://github.com/zaidsheikh/MultiDoc-MultiLingual \
-    #--branch docker \
   clearml-task --project $project_name --name ${mode}_${run_id} \
     --docker ${docker_image} \
+    --repo https://github.com/zaidsheikh/MultiDoc-MultiLingual \
+    --branch docker \
     --docker_args "-e CLEARML_AGENT_SKIP_PIP_VENV_INSTALL=${python} $EXTRA_DOCKER_ARGS" \
     --packages pip $SPECIFY_QUEUE \
     --script clearml_scripts/mt5_pipeline.py \
