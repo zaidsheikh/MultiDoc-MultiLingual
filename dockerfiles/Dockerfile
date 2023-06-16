@@ -22,3 +22,5 @@ RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86
 
 ENV PATH /opt/conda/bin:$PATH
 RUN conda update conda -y
+COPY setup.sh /
+SHELL ["/bin/bash", "-i", "/setup.sh"]
