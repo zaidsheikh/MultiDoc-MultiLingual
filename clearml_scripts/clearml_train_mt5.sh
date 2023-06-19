@@ -37,8 +37,8 @@
 
 data_dir=$(readlink -ve $1) || { echo "Error! Exiting..."; exit 1; }
 output_dir=$(readlink -m $2)
-mode=${3:-"single"}
-clearml_dataset_id=$4
+clearml_dataset_id=$3
+mode=${4:-"single"}
 
 # change these values if needed
 project_name="train_mt5"
@@ -72,6 +72,7 @@ if [[ "$mode" == "single" ]]; then
         data_dir=$input_dir \
         output_dir=$clearml_output \
         overwrite_output_dir=True \
+        local_rank=-1 \
         do_train="True"
 fi
 
@@ -89,6 +90,7 @@ if [[ "$mode" == *"multi"* ]]; then
         output_dir=$clearml_output \
         overwrite_output_dir=True \
         do_train="True" \
+        local_rank=-1 \
         upsampling_factor=1
 fi
 

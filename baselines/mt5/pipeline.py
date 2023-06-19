@@ -207,7 +207,7 @@ def main():
         level=logging.INFO if training_args.local_rank in [
             -1, 0] else logging.WARN,
     )
-    training_args.local_rank = -1
+    # training_args.local_rank = -1
     logger.warning(
         "Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
         training_args.local_rank,

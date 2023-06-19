@@ -49,22 +49,26 @@ docker_image="zs12/multidoc_multilingual:v0.2"
 if [[ "$mode" == "single" ]]; then
   echo "train single langauge mt5 model..."
   set -x
-  docker run --rm -it --gpus all -v $data_dir:/data/ -v $output_dir:/output/ --env CUDA_VISIBLE_DEVICES='' $docker_image \
+  docker run --rm -it --gpus all -v $data_dir:/data/ -v $output_dir:/output/ \
+    --env CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES" $docker_image \
     $python /MultiDoc-MultiLingual/baselines/mt5/pipeline.py \
       --model_name_or_path google/mt5-small \
       --data_dir /data/ \
       --output_dir /output/ \
+      --local_rank -1 \
       --overwrite_output_dir --do_train True
 fi
 
 if [[ "$mode" == *"multi"* ]]; then
   echo "train multilingual mt5 model..."
   set -x
-  docker run --rm -it --gpus all -v $data_dir:/data/ -v $output_dir:/output/ --env CUDA_VISIBLE_DEVICES='' $docker_image \
+  docker run --rm -it --gpus all -v $data_dir:/data/ -v $output_dir:/output/ \
+    --env CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES" $docker_image \
     $python /MultiDoc-MultiLingual/baselines/mt5/pipeline.py \
       --model_name_or_path google/mt5-small \
       --data_dir /data/ \
       --output_dir /output/ \
       --overwrite_output_dir --do_train True \
+      --local_rank -1 \
       --upsampling_factor 1
 fi
