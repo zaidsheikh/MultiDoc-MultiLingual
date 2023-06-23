@@ -121,6 +121,9 @@ docker pull zs12/multidoc_multilingual:v0.2
 
 # train multilingual mt5 model
 ./dockerfiles/docker_train_mt5.sh prepared_dataset/multilingual/ output/ multi
+
+# Run inference/prediction using a trained multilingual mt5 model
+./dockerfiles/docker_predict_with_generate.sh model_dir/ data_dir/ output_dir/
 ```
 
 - To run the docker container via ClearML:
