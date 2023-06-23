@@ -20,7 +20,7 @@ from transformers import (
     set_seed,
     EncoderDecoderModel,
 )
-from transformers.trainer_utils import EvaluationStrategy, is_main_process
+from transformers.trainer_utils import EvaluationStrategy, IntervalStrategy, is_main_process
 from transformers.training_args import ParallelMode
 from utils import (
     Seq2SeqDataCollator,
@@ -430,7 +430,7 @@ def main():
             max_source_length=data_args.max_source_length,
             prefix=model.config.prefix or "",
         )
-        if training_args.do_eval or training_args.evaluation_strategy != EvaluationStrategy.NO
+        if training_args.do_eval or training_args.evaluation_strategy not in [EvaluationStrategy.NO, IntervalStrategy.NO]
         else None
     )
     test_dataset = (
@@ -505,13 +505,13 @@ def main():
     if training_args.do_predict:
         logger.info("*** Predict ***")
 
+            # length_penalty=data_args.length_penalty,
+            # no_repeat_ngram_size=data_args.no_repeat_ngram_size,
         test_output = trainer.predict(
             test_dataset=test_dataset,
             metric_key_prefix="test",
             max_length=data_args.val_max_target_length,
             num_beams=data_args.eval_beams,
-            length_penalty=data_args.length_penalty,
-            no_repeat_ngram_size=data_args.no_repeat_ngram_size,
         )
         metrics = test_output.metrics
         metrics["test_n_objs"] = data_args.n_test
