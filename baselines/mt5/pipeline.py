@@ -451,6 +451,7 @@ def main():
         build_compute_metrics_fn(
             data_args.task, tokenizer, data_args) if training_args.predict_with_generate else None
     )
+    training_args.remove_unused_columns = False
     trainer = Seq2SeqTrainer(
         model=model,
         args=training_args,

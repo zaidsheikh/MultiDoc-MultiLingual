@@ -57,6 +57,7 @@ Multi-Doc-Sum/
 baseline_results/
 data/
 model/
+#*.sh
 .DS_Store
 
 # Translations
