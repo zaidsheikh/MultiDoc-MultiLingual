@@ -114,7 +114,7 @@ Here is an example [evaluation.py](evaluation/run_evaluation.py) to use evaluati
 
 - We have also provided a docker image with all dependencies pre-installed in order to make it easier to run the above scripts. Here's how to run the training pipeline inside a docker container:
 ```
-docker pull zs12/multidoc_multilingual:v0.2
+docker pull zs12/multidoc_multilingual:v0.3.1
 
 # train single langauge mt5 model
 ./dockerfiles/docker_train_mt5.sh prepared_dataset/individual/EN/ output/

@@ -44,7 +44,7 @@ mode=${4:-"single"}
 project_name="train_mt5"
 run_id="run1"
 CLEARML_QUEUE="default"
-docker_image="zs12/multidoc_multilingual:v0.2"
+docker_image="zs12/multidoc_multilingual:v0.3.1"
 
 [[ ! -z "$CLEARML_QUEUE" ]] && SPECIFY_QUEUE="--queue $CLEARML_QUEUE" || SPECIFY_QUEUE=""
 
