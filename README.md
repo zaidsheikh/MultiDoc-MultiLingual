@@ -123,6 +123,7 @@ docker pull zs12/multidoc_multilingual:v0.3.1
 ./dockerfiles/docker_train_mt5.sh prepared_dataset/multilingual/ output/ multi
 
 # Run inference/prediction using a trained multilingual mt5 model
+# data_dir/ should contain files named test.source and test.target
 ./dockerfiles/docker_predict_with_generate.sh model_dir/ data_dir/ output_dir/
 ```
 
