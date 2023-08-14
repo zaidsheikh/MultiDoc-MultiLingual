@@ -40,9 +40,9 @@ data_dir=$(readlink -ve $1) || { echo "Error! Exiting..."; exit 1; }
 output_dir=$(readlink -m $2)
 mode=${3:-"single"}
 
-# model_name_or_path="google/mt5-small"
-HUGGINGFACE_HUB_CACHE=${HOME}/.cache/huggingface/hub/
-model_name_or_path="models--google--mt5-small/snapshots/38f23af8ec210eb6c376d40e9c56bd25a80f195d/"
+model_name_or_path="google/mt5-small"
+HUGGINGFACE_HUB_CACHE=${HOME}/.cache/huggingface/
+#model_name_or_path="/root/.cache/huggingface/hub/models--google--mt5-small/snapshots/38f23af8ec210eb6c376d40e9c56bd25a80f195d/"
 
 python="python3"
 docker_image="zs12/multidoc_multilingual:noconda_v0.0.1"
@@ -55,10 +55,11 @@ if [[ "$mode" == "single" ]]; then
   echo "train single langauge mt5 model..."
   set -x
   docker run --rm -it --gpus all -v $data_dir:/data/ -v $output_dir:/output/ \
-    -v ${HUGGINGFACE_HUB_CACHE}:/root/.cache/huggingface/hub/ \
+    -v ${HUGGINGFACE_HUB_CACHE}:/root/.cache/huggingface/ \
+    --env HF_DATASETS_OFFLINE=1 --env TRANSFORMERS_OFFLINE=1 \
     --env CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES" $docker_image \
     $python /MultiDoc-MultiLingual/baselines/mt5/pipeline.py \
-      --model_name_or_path /root/.cache/huggingface/hub/${model_name_or_path} \
+      --model_name_or_path ${model_name_or_path} \
       --data_dir /data/ \
       --output_dir /output/ \
       --local_rank -1 \
@@ -69,10 +70,11 @@ if [[ "$mode" == *"multi"* ]]; then
   echo "train multilingual mt5 model..."
   set -x
   docker run --rm -it --gpus all -v $data_dir:/data/ -v $output_dir:/output/ \
-    -v ${HUGGINGFACE_HUB_CACHE}:/root/.cache/huggingface/hub/ \
+    -v ${HUGGINGFACE_HUB_CACHE}:/root/.cache/huggingface/ \
+    --env HF_DATASETS_OFFLINE=1 --env TRANSFORMERS_OFFLINE=1 \
     --env CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES" $docker_image \
     $python /MultiDoc-MultiLingual/baselines/mt5/pipeline.py \
-      --model_name_or_path /root/.cache/huggingface/hub/${model_name_or_path} \
+      --model_name_or_path ${model_name_or_path} \
       --data_dir /data/ \
       --output_dir /output/ \
       --overwrite_output_dir --do_train True \
