@@ -11,3 +11,4 @@ torch
 tqdm
 accelerate
 transformers==4.15.0
+Flask==2.3.3
