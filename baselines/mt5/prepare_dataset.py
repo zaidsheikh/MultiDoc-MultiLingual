@@ -83,6 +83,34 @@ def extract_data(input_dir, output_dir, language):
                     lang + "_" + os.path.basename(target_file)
                 )
             )
+        if source_file.endswith("val.source"):
+            shutil.copy(
+                source_file,
+                os.path.join(
+                    multilingual_dir,
+                    lang + "_" + os.path.basename(source_file)
+                )
+            )
+
+            shutil.copy(
+                target_file,
+                os.path.join(
+                    multilingual_dir,
+                    lang + "_" + os.path.basename(target_file)
+                )
+            )
+
+    val_source_files = glob.glob(os.path.join(multilingual_dir, "*_val.source"))
+    with open(os.path.join(multilingual_dir, "val.source"), 'w') as fout:
+        for val_source_file in val_source_files:
+            with open(val_source_file, 'r') as fin:
+                fout.write(fin.read())
+
+    val_target_files = glob.glob(os.path.join(multilingual_dir, "*_val.target"))
+    with open(os.path.join(multilingual_dir, "val.target"), 'w') as fout:
+        for val_target_file in val_target_files:
+            with open(val_target_file, 'r') as fin:
+                fout.write(fin.read())
 
 
 @click.command()

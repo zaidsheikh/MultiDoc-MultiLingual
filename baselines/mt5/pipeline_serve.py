@@ -1,3 +1,4 @@
+from flask import Flask, jsonify, request
 
 import torch
 import logging
@@ -7,6 +8,9 @@ import glob
 import json
 from dataclasses import dataclass, field
 from typing import Optional
+import tempfile
+from pathlib import Path
+
 
 import transformers
 from transformers import (
@@ -44,6 +48,9 @@ from torch.utils.data import DataLoader, SequentialSampler
 
 
 logger = logging.getLogger(__name__)
+
+trainer, tokenizer, data_args = None, None, None
+app = Flask(__name__)
 
 
 @dataclass
@@ -155,34 +162,10 @@ class DataTrainingArguments:
         metadata={
             "help": "If only pad tokens should be ignored. This assumes that `config.pad_token_id` is defined."},
     )
-    do_preprocess: bool = field(
-        default=False,
-        metadata={"help": "whether to tokenize the dataset first"}
-    )
-    use_preprocessed_data: bool = field(
-        default=False,
-        metadata={
-            "help": "whether to use preprocessed data from disk or tokenize dynamically"}
-    )
 
 
-def handle_metrics(split, metrics, output_dir):
-    """
-    Log and save metrics
-
-    Args:
-    - split: one of train, val, test
-    - metrics: metrics dict
-    - output_dir: where to save the metrics
-    """
-
-    logger.info(f"***** {split} metrics *****")
-    for key in sorted(metrics.keys()):
-        logger.info(f"  {key} = {metrics[key]}")
-    save_json(metrics, os.path.join(output_dir, f"{split}_results.json"))
-
-
-def main():
+def load_model():
+    global tokenizer, trainer, data_args
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
@@ -319,133 +302,6 @@ def main():
     dataset_collator = Seq2SeqDataCollator(
         tokenizer, data_args, None, training_args.tpu_num_cores)
 
-    if data_args.do_preprocess:
-        logger.info("Pretokenizing data")
-        dataset_collator = Seq2SeqDataCollator(
-            tokenizer, data_args, "max_length", training_args.tpu_num_cores)
-        os.makedirs(preprocessed_dir, exist_ok=True)
-
-        type2counts = {
-            "train": [data_args.n_train, data_args.max_target_length, training_args.do_train],
-            "val": [data_args.n_val, data_args.val_max_target_length, training_args.do_train],
-            "test": [data_args.n_test, data_args.test_max_target_length, training_args.do_eval or training_args.do_predict]
-        }
-        prefix = model.config.prefix or ""
-
-        for data_type in type2counts:
-            if not type2counts[data_type][2]:
-                continue
-
-            logger.info(f"Tokenizing {data_type} files")
-
-            search_str = os.path.join(
-                data_args.data_dir, f'*{data_type}.source')
-            for src_file in tqdm(glob.glob(search_str)):
-                type_path = "".join(os.path.basename(
-                    src_file).rsplit(".source", 1))
-                output_path = os.path.join(
-                    preprocessed_dir, f'{type_path}.tokenized')
-                if (
-                        os.path.isfile(output_path) and
-                        not training_args.overwrite_output_dir
-                ):
-                    continue
-
-                dataset = Seq2SeqDataset(
-                    tokenizer,
-                    type_path=type_path,
-                    data_dir=data_args.data_dir,
-                    n_obs=type2counts[data_type][0],
-                    max_target_length=type2counts[data_type][1],
-                    max_source_length=data_args.max_source_length,
-                    prefix=prefix,
-                )
-                sampler = SequentialSampler(dataset)
-                dataloader = DataLoader(
-                    dataset,
-                    batch_size=1,
-                    sampler=sampler,
-                    collate_fn=dataset_collator
-                )
-
-                with open(output_path, 'w') as f:
-                    for datapoint in dataloader:
-                        datapoint = {k: v.tolist()
-                                     for k, v in datapoint.items()}
-                        print(json.dumps(datapoint, ensure_ascii=False), file=f)
-
-    if data_args.use_preprocessed_data:
-        logger.info("Using pretokenized data")
-        assert os.path.isdir(
-            preprocessed_dir), "Preprocessed data not found, run with --do_preprocess"
-        data_args.data_dir = preprocessed_dir
-        dataset_class = TokenizedDataset
-        dataset_collator = TokenizedDataCollator(tokenizer)
-
-    # Get datasets
-    if data_args.upsampling_factor is not None:
-        multi_dataset_kwargs = {
-            "upsampling_factor": data_args.upsampling_factor,
-            "total_batch_size": total_train_batch_size,
-            "actual_batch_size": training_args.train_batch_size,
-            "gradient_accum": training_args.gradient_accumulation_steps,
-            "is_distributed": bool(training_args.local_rank != -1),
-            "dataset_class": dataset_class
-        }
-        train_dataset = (
-            MultiDataset(
-                tokenizer,
-                type_path="train",
-                data_dir=data_args.data_dir,
-                n_obs=data_args.n_train,
-                max_target_length=data_args.max_target_length,
-                max_source_length=data_args.max_source_length,
-                prefix=model.config.prefix or "",
-                **multi_dataset_kwargs,
-            )
-            if training_args.do_train
-            else None
-        )
-    else:
-        train_dataset = (
-            dataset_class(
-                tokenizer,
-                type_path="train",
-                data_dir=data_args.data_dir,
-                n_obs=data_args.n_train,
-                max_target_length=data_args.max_target_length,
-                max_source_length=data_args.max_source_length,
-                prefix=model.config.prefix or "",
-            )
-            if training_args.do_train
-            else None
-        )
-    eval_dataset = (
-        dataset_class(
-            tokenizer,
-            type_path="val",
-            data_dir=data_args.data_dir,
-            n_obs=data_args.n_val,
-            max_target_length=data_args.val_max_target_length,
-            max_source_length=data_args.max_source_length,
-            prefix=model.config.prefix or "",
-        )
-        if training_args.do_eval or training_args.evaluation_strategy not in [EvaluationStrategy.NO, IntervalStrategy.NO]
-        else None
-    )
-    test_dataset = (
-        dataset_class(
-            tokenizer,
-            type_path="test",
-            data_dir=data_args.data_dir,
-            n_obs=data_args.n_test,
-            max_target_length=data_args.test_max_target_length,
-            max_source_length=data_args.max_source_length,
-            prefix=model.config.prefix or "",
-        )
-        if training_args.do_predict
-        else None
-    )
     # Initialize our Trainer
     compute_metrics_fn = (
         build_compute_metrics_fn(
@@ -455,94 +311,70 @@ def main():
     trainer = Seq2SeqTrainer(
         model=model,
         args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        train_dataset=None,
+        eval_dataset=None,
         data_collator=dataset_collator,
         compute_metrics=compute_metrics_fn,
         tokenizer=tokenizer,
     )
+    logger.info(f"Model {model_args.model_name_or_path} successfully loaded...")
 
-    all_metrics = {}
-    # Training
-    if training_args.do_train:
-        logger.info("*** Train ***")
 
-        train_result = trainer.train(
-            model_path=model_args.model_name_or_path if os.path.isdir(
-                model_args.model_name_or_path) else None
+def predict(data_dir):
+    dataset_class = Seq2SeqDataset
+    test_dataset = (
+        dataset_class(
+            tokenizer,
+            type_path="test",
+            data_dir=data_dir,
+            n_obs=data_args.n_test,
+            max_target_length=data_args.test_max_target_length,
+            max_source_length=data_args.max_source_length,
+            prefix="",
         )
-        metrics = train_result.metrics
-        metrics["train_n_objs"] = data_args.n_train
+    )
 
-        trainer.save_model()  # this also saves the tokenizer
+    test_output = trainer.predict(
+        test_dataset=test_dataset,
+        metric_key_prefix="test",
+        max_length=data_args.val_max_target_length,
+        num_beams=data_args.eval_beams,
+    )
 
-        if trainer.is_world_process_zero():
-            handle_metrics("train", metrics, training_args.output_dir)
-            all_metrics.update(metrics)
+    predictions = test_output.predictions
+    predictions[predictions == -100] = tokenizer.pad_token_id
+    test_preds = tokenizer.batch_decode(
+        predictions, skip_special_tokens=True, clean_up_tokenization_spaces=True
+    )
+    test_preds = lmap(str.strip, test_preds)
 
-            # Need to save the state, since Trainer.save_model saves only the tokenizer with the model
-            trainer.state.save_to_json(os.path.join(
-                training_args.output_dir, "trainer_state.json"))
-
-            # For convenience, we also re-save the tokenizer to the same directory,
-            # so that you can share your model easily on huggingface.co/models =)
-            tokenizer.save_pretrained(training_args.output_dir)
-
-    # Evaluation
-    if training_args.do_eval:
-        logger.info("*** Evaluate ***")
-
-        metrics = trainer.evaluate(
-            metric_key_prefix="val", max_length=data_args.val_max_target_length, num_beams=data_args.eval_beams
-        )
-        metrics["val_n_objs"] = data_args.n_val
-        metrics["val_loss"] = round(metrics["val_loss"], 4)
-
-        if trainer.is_world_process_zero():
-
-            handle_metrics("val", metrics, training_args.output_dir)
-            all_metrics.update(metrics)
-
-    if training_args.do_predict:
-        logger.info("*** Predict ***")
-
-            # length_penalty=data_args.length_penalty,
-            # no_repeat_ngram_size=data_args.no_repeat_ngram_size,
-        test_output = trainer.predict(
-            test_dataset=test_dataset,
-            metric_key_prefix="test",
-            max_length=data_args.val_max_target_length,
-            num_beams=data_args.eval_beams,
-        )
-        metrics = test_output.metrics
-        metrics["test_n_objs"] = data_args.n_test
-
-        if trainer.is_world_process_zero():
-            metrics["test_loss"] = round(metrics["test_loss"], 4)
-            handle_metrics("test", metrics, training_args.output_dir)
-            all_metrics.update(metrics)
-
-            if training_args.predict_with_generate:
-                predictions = test_output.predictions
-                predictions[predictions == -100] = tokenizer.pad_token_id
-                test_preds = tokenizer.batch_decode(
-                    predictions, skip_special_tokens=True, clean_up_tokenization_spaces=True
-                )
-                test_preds = lmap(str.strip, test_preds)
-                write_txt_file(test_preds, os.path.join(
-                    training_args.output_dir, "test_generations.txt"))
-
-    if trainer.is_world_process_zero():
-        save_json(all_metrics, os.path.join(
-            training_args.output_dir, "all_results.json"))
-
-    return all_metrics
+    return test_preds
 
 
-def _mp_fn(index):
-    # For xla_spawn (TPUs)
-    main()
+@app.route("/", methods=['POST'])
+def do_prediction():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = tempfile.TemporaryDirectory()
+        tmpdirname = tmpdir.name
+        tmpdirpath = Path(tmpdirname)
+        data = request.get_data(as_text=True)
+        docs = []
+        for doc in data.splitlines():
+            doc = doc.strip()
+            if doc:
+                try:
+                    json.loads(doc) # check if valid json
+                    docs.append(doc)
+                except:
+                    docs.append(json.dumps(doc))
+        logger.info(f"Number of lines in data: {len(docs)}")
+        out_data = "\n".join(docs) + "\n"
+        (tmpdirpath / "test.source").write_text(out_data, encoding="utf-8")
+        (tmpdirpath / "test.target").symlink_to(tmpdirpath / "test.source")
+        res = predict(tmpdirname)
+        return '\n'.join(res) + '\n'
 
 
 if __name__ == "__main__":
-    main()
+    load_model()
+    app.run(host='0.0.0.0', port=4123)

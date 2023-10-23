@@ -109,3 +109,36 @@ $ python baselines/mt5/prepare_dataset.py \
 
 ## Evaluation
 Here is an example [evaluation.py](evaluation/run_evaluation.py) to use evaluation metrics: BERTScore and T5Score. To run T5Score, a T5Score model should be downloaded from [T5Score-summ](https://drive.google.com/drive/u/1/folders/1VrVWRbXZRBDnl4pGvcfvfLzF4P4JRO_m) to directory ./model/T5Score/.
+
+### Docker image
+
+- We have also provided a docker image with all dependencies pre-installed in order to make it easier to run the above scripts. Here's how to run the training pipeline inside a docker container:
+```
+docker pull zs12/multidoc_multilingual:v0.3.1
+
+# train single langauge mt5 model
+./dockerfiles/docker_train_mt5.sh prepared_dataset/individual/EN/ output/
+
+# train multilingual mt5 model
+./dockerfiles/docker_train_mt5.sh prepared_dataset/multilingual/ output/ multi
+
+# Run inference/prediction using a trained multilingual mt5 model
+# data_dir/ should contain files named test.source and test.target
+./dockerfiles/docker_predict_with_generate.sh model_dir/ data_dir/ output_dir/
+
+# Run a prediction server that accepts requests from localhost:4123
+./dockerfiles/docker_prediction_server.sh model_dir/
+# upload a file to summarize (one doc/passage per line)
+curl --data-binary @test.source localhost:4123
+
+```
+
+- To run the docker container via ClearML:
+
+```
+# train single langauge mt5 model
+./clearml_scripts/clearml_train_mt5.sh prepared_dataset/individual/EN/ output/
+
+# train multilingual mt5 model
+./clearml_scripts/clearml_train_mt5.sh prepared_dataset/multilingual/ output/ multi
+```

@@ -1,1 +1,14 @@
-transformers==4.19.2
+bert-score
+click
+fairseq
+google-api-python-client
+keybert
+requests
+sacrebleu
+scikit-learn
+setuptools
+torch
+tqdm
+accelerate
+transformers==4.15.0
+Flask==2.3.3

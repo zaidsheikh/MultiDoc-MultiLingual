@@ -58,8 +58,6 @@ baseline_results/
 data/
 model/
 #*.sh
-get*.sh
-run*.sh
 .DS_Store
 
 # Translations
