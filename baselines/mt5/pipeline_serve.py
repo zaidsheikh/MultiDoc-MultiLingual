@@ -358,11 +358,21 @@ def do_prediction():
         tmpdirname = tmpdir.name
         tmpdirpath = Path(tmpdirname)
         data = request.get_data(as_text=True)
-        logger.info("Number of lines in data: " + str(data.count('\n')))
-        (tmpdirpath / "test.source").write_text(data, encoding="utf-8")
+        docs = []
+        for doc in data.splitlines():
+            doc = doc.strip()
+            if doc:
+                try:
+                    json.loads(doc) # check if valid json
+                    docs.append(doc)
+                except:
+                    docs.append(json.dumps(doc))
+        logger.info(f"Number of lines in data: {len(docs)}")
+        out_data = "\n".join(docs) + "\n"
+        (tmpdirpath / "test.source").write_text(out_data, encoding="utf-8")
         (tmpdirpath / "test.target").symlink_to(tmpdirpath / "test.source")
         res = predict(tmpdirname)
-        return '\n'.join(res)
+        return '\n'.join(res) + '\n'
 
 
 if __name__ == "__main__":
