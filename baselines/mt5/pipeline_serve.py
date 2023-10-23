@@ -353,12 +353,10 @@ def predict(data_dir):
 
 @app.route("/", methods=['POST'])
 def do_prediction():
-    # with tempfile.TemporaryDirectory() as tmpdir:
-    tmpdir = tempfile.TemporaryDirectory()
-    tmpdirname = tmpdir.name
-    tmpdirpath = Path(tmpdirname)
-    if True:
-        logger.info(tmpdirname)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = tempfile.TemporaryDirectory()
+        tmpdirname = tmpdir.name
+        tmpdirpath = Path(tmpdirname)
         data = request.get_data(as_text=True)
         logger.info("Number of lines in data: " + str(data.count('\n')))
         (tmpdirpath / "test.source").write_text(data, encoding="utf-8")

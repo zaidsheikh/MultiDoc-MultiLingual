@@ -44,7 +44,7 @@ mkdir -p $output_dir
 chmod -R 777 $output_dir
 
 python="/opt/conda/envs/MultiDocMultiLingual/bin/python"
-docker_image="zs12/multidoc_multilingual:v0.3.1"
+docker_image="zs12/multidoc_multilingual:v0.3.3"
 CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES-"0"}
 
 if [[ "$mode" == "single" ]]; then
