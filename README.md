@@ -125,6 +125,12 @@ docker pull zs12/multidoc_multilingual:v0.3.1
 # Run inference/prediction using a trained multilingual mt5 model
 # data_dir/ should contain files named test.source and test.target
 ./dockerfiles/docker_predict_with_generate.sh model_dir/ data_dir/ output_dir/
+
+# Run a prediction server that accepts requests from localhost:4123
+./dockerfiles/docker_prediction_server.sh model_dir/
+# upload a file to summarize (one doc/passage per line)
+curl --data-binary @test.source localhost:4123
+
 ```
 
 - To run the docker container via ClearML:
