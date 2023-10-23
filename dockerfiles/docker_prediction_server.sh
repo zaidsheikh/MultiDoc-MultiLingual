@@ -5,7 +5,7 @@
 model_dir=$(readlink -ve $1) || { echo "Error! Exiting..."; exit 1; }
 
 python="/opt/conda/envs/MultiDocMultiLingual/bin/python"
-docker_image="zs12/multidoc_multilingual:v0.3.3"
+docker_image="zs12/multidoc_multilingual:v0.3.4"
 CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES-"0"}
 
 set -x
